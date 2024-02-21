@@ -48,7 +48,8 @@
   const initLikeListInners = () => {
     const likeElements = document.querySelectorAll(".like-button");
     for (let likeButton of likeElements) {
-      likeButton.addEventListener('click', () => {
+      likeButton.addEventListener('click', (event) => {
+        event.stopPropagation();
         const index = likeButton.dataset.index;
         let comment = comments[index];
         if (comment.isLike) {
@@ -62,9 +63,23 @@
       })
     };
   };
+  const initCommentAnswerListener = () => {
+    const commentElements = document.querySelectorAll(".comment");
+    for (let commentLiEl of commentElements) {
+      commentLiEl.addEventListener('click', (event) => {
+        const index = commentLiEl.dataset.index;
+        let comment = comments[index];
+
+        commentTextElement.value = `
+       > ${comment.text}
+       ${comment.name}
+        `;
+      })
+    };
+  };
   const rendenComments = () => {
     const commentsHTML = comments.map((comment, index) => {
-      return `<li class="comment">
+      return `<li class="comment" data-index="${index}">
       <div class="comment-header">
         <div>${comment.name}</div>
         <div>${comment.date}</div>
@@ -85,6 +100,7 @@
     }).join(" ");
     ulCommentsElement.innerHTML = commentsHTML;
     initLikeListInners();
+    initCommentAnswerListener();
   };
 
   rendenComments();
@@ -121,8 +137,8 @@
 
     let formattedDate = dateNew + "." + month + "." + year + " " + hours + ":" + minutes;
     comments.push({
-      name: nameInputElement.value,
-      text: commentTextElement.value,
+      name: nameInputElement.value.replaceAll("<", "&lt;" ).replaceAll(">", "&gt;" ),
+      text: commentTextElement.value.replaceAll("<", "&lt;" ).replaceAll(">", "&gt;" ),
       date: formattedDate,
       like: 0,
       isLike: '',
