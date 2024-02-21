@@ -158,15 +158,6 @@
     }
 
     let formattedDate = dateNew + "." + month + "." + year + " " + hours + ":" + minutes;
-    // comments.push({
-    // author: {
-    //   name: nameInputElement.value.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
-    //  },
-    //  text: commentTextElement.value.replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
-    // date: formattedDate,
-    // likes: 0,
-    // isLiked: '',
-    // });
     fetch('https://wedev-api.sky.pro/api/v1/ekaterina-subbotina/comments', {
       method: "POST",
       body: JSON.stringify({
