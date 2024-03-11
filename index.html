@@ -11,6 +11,7 @@
   <div class="container">
     <ul class="comments" id="ul-comments">
       <!-- рендерится из js -->
+      Пожалуйста, подождите, загружаю коментарии...
     </ul>
     <div class="add-form">
       <input type="text" class="add-form-name" placeholder="Введите ваше имя" id="name-input" />
@@ -29,27 +30,50 @@
   const nameInputElement = document.getElementById("name-input");
   const commentTextElement = document.getElementById("comment-text");
   const buttonElement = document.getElementById("button-element");
+  const apiURL = 'https://wedev-api.sky.pro/api/v1/ekaterina-subbotina/comments';
   const getComments = () => {
-    const fecthPromise = fetch('https://wedev-api.sky.pro/api/v1/ekaterina-subbotina/comments', {
+    const fecthPromise = fetch(apiURL, {
       method: "GET",
     });
-    fecthPromise.then((response) => {
-      const jsonPromise = response.json();
-      jsonPromise.then((responseData) => {
-        const appComments = responseData.comments.map((comment) => {
-          return {
-            name: comment.author.name,
-            text: comment.text,
-            date: comment.date,
-            likes: comment.likes,
-            isLiked: false,
-          }
-        })
-        comments = appComments;
-        renderComments();
-      });
+
+    return fecthPromise.then((response) => {
+      return response.json();
+    }).then((responseData) => {
+      const appComments = responseData.comments.map((comment) => {
+        return {
+          name: comment.author.name,
+          text: comment.text,
+          date: formatDate(new Date(comment.date)),
+          likes: comment.likes,
+          isLiked: false,
+        }
+      })
+      comments = appComments;
+      renderComments();
     });
   }
+  const formatDate = (date) => {
+    if (date == undefined) return;
+    let dateNew = date.getDate();
+    let month = date.getMonth() + 1;
+    let year = date.getFullYear() - 2000;
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    if (dateNew < 10) {
+      dateNew = "0" + dateNew;
+    }
+    if (month < 10) {
+      month = "0" + month;
+    }
+    if (hours < 10) {
+      hours = "0" + hours;
+    }
+    if (minutes < 10) {
+      minutes = "0" + minutes;
+    }
+
+    return dateNew + "." + month + "." + year + " " + hours + ":" + minutes;
+  };
   let comments = [{
       name: 'Глеб Фокин',
       text: 'Это будет первый комментарий на этой странице',
@@ -125,9 +149,10 @@
   };
 
   getComments();
-  renderComments();
 
   buttonElement.addEventListener("click", () => {
+    const addCommentForm = document.querySelector('.add-form');
+    const addCommentFormInnerHtml = addCommentForm.innerHTML;
     nameInputElement.style.backgroundColor = '';
     commentTextElement.style.backgroundColor = '';
     if (nameInputElement.value == "") {
@@ -138,40 +163,24 @@
       commentTextElement.style.backgroundColor = 'red';
       return;
     }
-    let date = new Date();
-    let dateNew = date.getDate();
-    let month = date.getMonth() + 1;
-    let year = date.getFullYear() - 2000;
-    let hours = date.getHours();
-    let minutes = date.getMinutes();
-    if (dateNew < 10) {
-      dateNew = "0" + dateNew;
-    }
-    if (month < 10) {
-      month = "0" + month;
-    }
-    if (hours < 10) {
-      hours = "0" + hours;
-    }
-    if (minutes < 10) {
-      minutes = "0" + minutes;
-    }
 
-    let formattedDate = dateNew + "." + month + "." + year + " " + hours + ":" + minutes;
-    fetch('https://wedev-api.sky.pro/api/v1/ekaterina-subbotina/comments', {
+    addCommentForm.innerHTML = "Комментарий добавляется";
+
+    fetch(apiURL, {
       method: "POST",
       body: JSON.stringify({
+        date: formatDate(new Date()),
         text: commentTextElement.value,
         name: nameInputElement.value,
       }),
     }).then((response) => {
-      const jsonPromise = response.json();
-      jsonPromise.then((responseData) => {
-        if (responseData.result == 'ok') {
-          getComments();
-          renderComments();
-        }
-      });
+      return response.json();
+    }).then((responseData) => {
+      if (responseData.result == 'ok') {
+        return getComments();
+      }
+    }).then(() => {
+      addCommentForm.innerHTML = addCommentFormInnerHtml;
     });
     commentTextElement.value = "";
     nameInputElement.value = "";
