@@ -13,6 +13,7 @@
       <!-- рендерится из js -->
       Пожалуйста, подождите, загружаю коментарии...
     </ul>
+    <div class="status-info">Комментарий добавляется</div>
     <div class="add-form">
       <input type="text" class="add-form-name" placeholder="Введите ваше имя" id="name-input" />
       <textarea type="textarea" class="add-form-text" placeholder="Введите ваш коментарий" rows="4"
@@ -37,20 +38,27 @@
     });
 
     return fecthPromise.then((response) => {
-      return response.json();
-    }).then((responseData) => {
-      const appComments = responseData.comments.map((comment) => {
-        return {
-          name: comment.author.name,
-          text: comment.text,
-          date: formatDate(new Date(comment.date)),
-          likes: comment.likes,
-          isLiked: false,
+        if (response.status === 200) {
+          return response.json();
+        } else {
+          throw new Error("Cервер упал");
         }
+      }).then((responseData) => {
+        const appComments = responseData.comments.map((comment) => {
+          return {
+            name: comment.author.name,
+            text: comment.text,
+            date: formatDate(new Date(comment.date)),
+            likes: comment.likes,
+            isLiked: false,
+          }
+        })
+        comments = appComments;
+        renderComments();
       })
-      comments = appComments;
-      renderComments();
-    });
+      .catch((error) => {
+        alert(error);
+      });
   }
   const formatDate = (date) => {
     if (date == undefined) return;
@@ -150,9 +158,10 @@
 
   getComments();
 
-  buttonElement.addEventListener("click", () => {
+  buttonElement.addEventListener("click", (event) => {
+    event.preventDefault();
     const addCommentForm = document.querySelector('.add-form');
-    const addCommentFormInnerHtml = addCommentForm.innerHTML;
+    const statusInfoBlock = document.querySelector('.status-info');
     nameInputElement.style.backgroundColor = '';
     commentTextElement.style.backgroundColor = '';
     if (nameInputElement.value == "") {
@@ -164,26 +173,40 @@
       return;
     }
 
-    addCommentForm.innerHTML = "Комментарий добавляется";
+    addCommentForm.style.display = "none";
+    statusInfoBlock.style.display = "block";
 
     fetch(apiURL, {
-      method: "POST",
-      body: JSON.stringify({
-        date: formatDate(new Date()),
-        text: commentTextElement.value,
-        name: nameInputElement.value,
-      }),
-    }).then((response) => {
-      return response.json();
-    }).then((responseData) => {
-      if (responseData.result == 'ok') {
-        return getComments();
-      }
-    }).then(() => {
-      addCommentForm.innerHTML = addCommentFormInnerHtml;
-    });
-    commentTextElement.value = "";
-    nameInputElement.value = "";
+        method: "POST",
+        body: JSON.stringify({
+          date: formatDate(new Date()),
+          text: commentTextElement.value,
+          name: nameInputElement.value,
+          forceError: true,
+        }),
+      }).then((response) => {
+        if (response.status === 500) {
+          throw new Error("Сервер сломался, попробуй позже");
+        }
+        if (response.status === 400) {
+          throw new Error("Ты сделал ошибку в запросе, исправь данные и попробуй снова");
+        }
+        return response.json();
+      }).then((responseData) => {
+        if (responseData.result == 'ok') {
+          return getComments();
+        }
+      }).then(() => {
+        commentTextElement.value = "";
+        nameInputElement.value = "";
+        addCommentForm.style.display = "flex";
+        statusInfoBlock.style.display = "none";
+      })
+      .catch((error) => {
+        alert(error);
+        addCommentForm.style.display = "flex";
+        statusInfoBlock.style.display = "none";
+      })
   });
 </script>
 
