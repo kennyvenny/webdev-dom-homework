@@ -1,61 +1,59 @@
-const initLikeListInners = (comments) => {
-    const likeElements = document.querySelectorAll(".like-button");
-    for (let likeButton of likeElements) {
-        likeButton.addEventListener('click', (event) => {
-            event.stopPropagation();
-            const index = likeButton.dataset.index;
+ import {
+   getComments,
+   addNewComment,
+   token
+ } from "./api.js";
 
-            let comment = comments[index];
-            if (comment.isLiked) {
-                comments[index].isLiked = false;
-                comments[index].likes--;
-            } else {
-                comments[index].isLiked = true;
-                comments[index].likes++;
-            }
-            renderComments(comments);
-        })
-    };
-};
-const initCommentAnswerListener = (comments) => {
-    const commentElements = document.querySelectorAll(".comment");
-    const commentTextElement = document.getElementById("comment-text");
-    for (let commentLiEl of commentElements) {
-        commentLiEl.addEventListener('click', (event) => {
-            const index = commentLiEl.dataset.index;
-            let comment = comments[index];
+ import {
+   formatDate
+ } from "./date.js";
 
-            commentTextElement.value = `
-       > ${comment.text}
-       ${comment.name}
-        `;
-        })
-    };
-};
+ import {
+   renderComments
+ } from "./commentsList.js";
 
-export function renderComments(comments) {
-    const ulCommentsElement = document.getElementById('ul-comments');
-    const commentsHTML = comments.map((comment, index) => {
-        return `<li class="comment" data-index="${index}">
-      <div class="comment-header">
-        <div>${comment.name}</div>
-        <div>${comment.date}</div>
-      </div>
-      <div class="comment-body">
-        <div class="comment-text">
-          ${comment.text}
-        </div>
-      </div>
-      <div class="comment-footer">
-        <div class="likes">
-          <span class="likes-counter">${comment.likes}</span>
-          <button data-index="${index}" class="like-button ${comment.isLiked ? '-active-like' : ''}"></button>
-        </div>
-      </div>
-    </li>`;
+ import {
+   renderAuthForm
+ } from "./loginForm.js";
 
-    }).join(" ");
-    ulCommentsElement.innerHTML = commentsHTML;
-    initLikeListInners(comments);
-    initCommentAnswerListener(comments);
-};
+ import {
+   renderCommentForm
+ } from "./addCommentForm.js";
+
+ export let mainContainer = document.querySelector(".container");
+
+ export function getAndRenderComments() {
+   getComments().then((responseData) => {
+     const comments = responseData.comments.map((comment) => {
+       return {
+         name: comment.author.name,
+         text: comment.text,
+         date: formatDate(new Date(comment.date)),
+         likes: comment.likes,
+         isLiked: false,
+       }
+     });
+     renderComments(comments);
+   });
+ }
+
+ export function render() {
+   let pageType = token ? "pageAfterAuth" : "start";
+   let mainHtml = `<ul class="comments" id="ul-comments">
+      Пожалуйста, подождите, загружаю коментарии...
+    </ul>
+    <div class="form-wrapper"></div>`;
+
+   mainContainer.innerHTML = mainHtml;
+   
+   switch (pageType) {
+     case "start":
+       renderAuthForm();
+       break;
+     case "pageAfterAuth":
+       renderCommentForm();
+       break;
+   }
+
+   getAndRenderComments();
+ }
