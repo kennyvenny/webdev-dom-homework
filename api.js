@@ -66,5 +66,7 @@ export function login(login, password) {
             throw new Error("Ты сделал ошибку в запросе, исправь данные и попробуй снова");
         }
         return response.json();
-    })
+    }).catch((error) => {
+        alert(error);
+    });
 }
