@@ -1,11 +1,19 @@
 import {
-    renderComments
-} from "./render.js";
-import {
     formatDate
 } from "./date.js";
 
-const apiURL = 'https://wedev-api.sky.pro/api/v1/ekaterina-subbotina/comments';
+const apiURL = 'https://wedev-api.sky.pro/api/v2/ekaterina-subbotina/comments';
+const userURL = 'https://wedev-api.sky.pro/api/user/login';
+
+export let token;
+export let userName;
+
+export const setToken = (newToken) => {
+    token = newToken;
+};
+export const setUserName = (newUserName) => {
+    userName = newUserName;
+};
 
 export function getComments() {
     return fetch(apiURL, {
@@ -16,32 +24,21 @@ export function getComments() {
             } else {
                 throw new Error("Cервер упал");
             }
-        }).then((responseData) => {
-            const comments = responseData.comments.map((comment) => {
-                return {
-                    name: comment.author.name,
-                    text: comment.text,
-                    date: formatDate(new Date(comment.date)),
-                    likes: comment.likes,
-                    isLiked: false,
-                }
-            })
-
-            renderComments(comments);
         })
         .catch((error) => {
             alert(error);
         });
 };
 
-export function addNewComment(date, text, userName) {
+export function addNewComment(date, text) {
     return fetch(apiURL, {
         method: "POST",
+        headers: {
+            Authorization: token
+        },
         body: JSON.stringify({
             date: formatDate(date),
             text: text,
-            name: userName,
-            forceError: true,
         }),
     }).then((response) => {
         if (response.status === 500) {
@@ -51,9 +48,23 @@ export function addNewComment(date, text, userName) {
             throw new Error("Ты сделал ошибку в запросе, исправь данные и попробуй снова");
         }
         return response.json();
-    }).then((responseData) => {
-        if (responseData.result == 'ok') {
-            return getComments();
+    })
+}
+
+export function login(login, password) {
+    return fetch(userURL, {
+        method: "POST",
+        body: JSON.stringify({
+            login,
+            password
+        }),
+    }).then((response) => {
+        if (response.status === 500) {
+            throw new Error("Сервер сломался, попробуй позже");
         }
+        if (response.status === 400) {
+            throw new Error("Ты сделал ошибку в запросе, исправь данные и попробуй снова");
+        }
+        return response.json();
     })
 }
